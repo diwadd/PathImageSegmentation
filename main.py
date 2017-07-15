@@ -1,5 +1,10 @@
 import random
+import sys
+
+import numpy as np
+
 import data_handling as dh
+import deep_models as dm
 
 #random.seed(1)
 
@@ -13,6 +18,10 @@ if __name__ == "__main__":
     train_images, truth_images = dh.read_training_data()
     iw, ih, ic = train_images[0].shape
 
+    if len(train_images) != len(truth_images):
+        sys.exit("ERROR: Dimension mismatch.")
+    n_images = len(train_images)
+
     print("Data loaded.")
     print("Number of train images:" + str(len(train_images)))
     print("Number of truth images:" + str(len(truth_images)))
@@ -20,24 +29,39 @@ if __name__ == "__main__":
     print("Truth image size: " + str(truth_images[0].shape))
 
     # ------------------------------------------------------------------------
-    # Resize truth images        
-    # ------------------------------------------------------------------------
-
-    n_width = 100
-    n_height = 100
-
-    resized_truth_images = dh.resize_image_list(truth_images, n_width, n_height)
-    print("Resized truth images.")
-    print("Truth image after resize: " + str(truth_images[0].shape))
-
-    # ------------------------------------------------------------------------
     # Convert resized truth images to
     # gray scale      
     # ------------------------------------------------------------------------
 
-    grayscale_resized_truth_images = dh.convert_image_list_to_grayscale(resized_truth_images)
+    grayscale_resized_truth_images = dh.convert_image_list_to_grayscale(truth_images)
     print("Truth images converted to grayscale.")
     print("Truth image after conversion to grayscale: " + str(truth_images[0].shape))
+
+
+    # ------------------------------------------------------------------------
+    # Augment data        
+    # ------------------------------------------------------------------------
+
+    ap=[[0.0, 1.0],
+        [90.0, 1.0], 
+        [180.0, 1.0],
+        [270., 1.0]]
+
+    dh.augment_data(train_images, 
+                    grayscale_resized_truth_images,
+                    ap=ap)
+
+
+    # ------------------------------------------------------------------------
+    # Resize truth images        
+    # ------------------------------------------------------------------------
+
+    nw = 50
+    nh = 50
+
+    resized_truth_images = dh.resize_image_list(grayscale_resized_truth_images, nw, nh)
+    print("Resized truth images.")
+    print("Truth image after resize: " + str(truth_images[0].shape))
     
 
     # ------------------------------------------------------------------------
@@ -50,31 +74,58 @@ if __name__ == "__main__":
     # with the original truth images.
     # ------------------------------------------------------------------------
 
-    train_truth_image_list = list(zip(train_images, grayscale_resized_truth_images, truth_images))
+    train_truth_image_list = list(zip(train_images, resized_truth_images, truth_images))
     random.shuffle(train_truth_image_list)
-    train_images, grayscale_resized_truth_images, truth_images = zip(*train_truth_image_list)
+    train_images, resized_truth_images, truth_images = zip(*train_truth_image_list)
 
     print("Data shuffled.")
     print("Number of train images:" + str(len(train_images)))
-    print("Number of grayscale resized truth images:" + str(len(grayscale_resized_truth_images)))
+    print("Number of resized truth images:" + str(len(resized_truth_images)))
     print("Train image size: " + str(train_images[0].shape))
-    print("Grayscale resized truth image size: " + str(grayscale_resized_truth_images[0].shape))
+    print("Resized truth image size: " + str(resized_truth_images[0].shape))
 
-    dh.plot_two_images(train_images[0], grayscale_resized_truth_images[0])
+    dh.plot_two_images(train_images[0], resized_truth_images[0])
 
     # ------------------------------------------------------------------------
     # Back resize the truth data.
     # ------------------------------------------------------------------------
 
-    back_resized_truth_images = dh.resize_image_list(grayscale_resized_truth_images, iw, ih)
+    back_resized_truth_images = dh.resize_image_list(resized_truth_images, iw, ih)
     dh.plot_two_images(truth_images[0], back_resized_truth_images[0])
 
     # ------------------------------------------------------------------------
     # Scale the images to [0, 1]
     # ------------------------------------------------------------------------
 
-    train_images = [train_images[i]/255.0 for i in range(len(train_images))]
-    truth_images = [truth_images[i]/255.0 for i in range(len(truth_images))]
+    train_images = [train_images[i]/255.0 for i in range(n_images)]
+    resized_truth_images = [resized_truth_images[i]/255.0 for i in range(n_images)]
+
+    # ------------------------------------------------------------------------
+    # List to numpy arrays (~, iw, ih, ic)
+    # ------------------------------------------------------------------------
+
+    train_images_array = np.zeros((n_images, iw, ih, ic))
+    resized_truth_images_array = np.zeros((n_images, nw*nh))
+
+    for i in range(n_images):
+        train_images_array[i, :, :, :] = train_images[i]
+        resized_truth_images_array[i, :] = np.reshape(resized_truth_images[i], (nw*nh))
+
+
+
+    model = dm.basic_model(iw=iw, 
+                           ih=ih, 
+                           ic=ic,
+                           ow=nw,
+                           oh=nh,
+                           dropout=0.1,
+                           alpha=0.001)
+
+    model.fit(train_images_array, 
+              resized_truth_images_array,
+              epochs=100,
+              batch_size=16)
+
 
 
 

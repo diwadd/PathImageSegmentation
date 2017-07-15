@@ -1,6 +1,9 @@
 import glob
 import cv2
 import math
+import sys
+import os
+import shutil
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -90,3 +93,61 @@ def plot_two_images(bgr, gs):
     plt.colorbar()
 
     plt.show()
+
+
+def augment_data(train_images, 
+                 truth_images,
+                 ap=[[0.0, 1.0], [180.0, 1.0]]):
+
+    # ap - augment parameters
+    # ap[i][0] - rotation angle
+    # ap[i][1] - scale
+
+    augmented_images_dir = "augmented_images/"
+    is_dir = os.path.isdir(augmented_images_dir)
+    if (is_dir == True):
+        shutil.rmtree(augmented_images_dir)
+        os.makedirs(augmented_images_dir)
+    else:
+        os.makedirs(augmented_images_dir)
+
+
+    n_images = len(train_images)
+    iw, ih, ic = train_images[0].shape
+    mw, mh = truth_images[0].shape
+
+
+    if ((iw != mw) or (mh != mh)):
+        sys.exit("ERROR: Dimension mismatch!")
+
+    for i in range(n_images):
+            for j in range(len(ap)):
+
+                rotation_angle = ap[j][0]
+                scale = ap[j][1]
+
+                R = cv2.getRotationMatrix2D((iw/2, ih/2), rotation_angle, scale)
+
+                rotated_train_image = cv2.warpAffine(train_images[i], R, (iw, ih))
+                rotated_truth_image = cv2.warpAffine(truth_images[i], R, (mw, mh))
+        
+                cv2.imwrite(augmented_images_dir + \
+                            "train_image_id_" + \
+                            str(i) + "_" + \
+                            str(int(rotation_angle)) + "_" + \
+                            str(int(scale)) + ".tif", \
+                            rotated_train_image)
+
+                cv2.imwrite(augmented_images_dir + \
+                            "truth_image_id_" + \
+                            str(i) + "_" + \
+                            str(int(rotation_angle)) + "_" + \
+                            str(int(scale)) + ".tif", \
+                            rotated_truth_image)
+
+
+
+
+
+
+
