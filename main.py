@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # Load data        
     # ------------------------------------------------------------------------
 
-    train_images, truth_images = dh.read_training_data()
+    train_images, truth_images = dh.read_data(data_dir="augmented_images/")
     iw, ih, ic = train_images[0].shape
 
     if len(train_images) != len(truth_images):
@@ -37,21 +37,6 @@ if __name__ == "__main__":
     print("Truth images converted to grayscale.")
     print("Truth image after conversion to grayscale: " + str(truth_images[0].shape))
 
-
-    # ------------------------------------------------------------------------
-    # Augment data        
-    # ------------------------------------------------------------------------
-
-    ap=[[0.0, 1.0],
-        [90.0, 1.0], 
-        [180.0, 1.0],
-        [270., 1.0]]
-
-    dh.augment_data(train_images, 
-                    grayscale_resized_truth_images,
-                    ap=ap)
-
-
     # ------------------------------------------------------------------------
     # Resize truth images        
     # ------------------------------------------------------------------------
@@ -62,7 +47,6 @@ if __name__ == "__main__":
     resized_truth_images = dh.resize_image_list(grayscale_resized_truth_images, nw, nh)
     print("Resized truth images.")
     print("Truth image after resize: " + str(truth_images[0].shape))
-    
 
     # ------------------------------------------------------------------------
     # Shuffle the data
@@ -104,13 +88,13 @@ if __name__ == "__main__":
     # List to numpy arrays (~, iw, ih, ic)
     # ------------------------------------------------------------------------
 
+
     train_images_array = np.zeros((n_images, iw, ih, ic))
     resized_truth_images_array = np.zeros((n_images, nw*nh))
 
     for i in range(n_images):
         train_images_array[i, :, :, :] = train_images[i]
         resized_truth_images_array[i, :] = np.reshape(resized_truth_images[i], (nw*nh))
-
 
 
     model = dm.basic_model(iw=iw, 
@@ -121,13 +105,13 @@ if __name__ == "__main__":
                            dropout=0.1,
                            alpha=0.001)
 
-    model.fit(train_images_array, 
+    model.fit(train_images_array,
               resized_truth_images_array,
               epochs=100,
               batch_size=16)
 
 
-
+    model.save("model.h5")
 
 
 

@@ -19,11 +19,9 @@ def load_images(file_names_list):
     return images
 
 
-def read_training_data(train_dir="training/images/",
-                       truth_dir="training/truth/"):
+def read_data(data_dir="training/images/"): 
 
-
-    train_file_names_list = glob.glob(train_dir + "*.tif")
+    train_file_names_list = glob.glob(data_dir + "*.tif")
     n_train_images = len(train_file_names_list)
 
     # The truth images have the same numbers.
@@ -32,7 +30,13 @@ def read_training_data(train_dir="training/images/",
     # correspond to truth image.
     truth_file_names_list = [None for i in range(n_train_images)]
     for i in range(n_train_images):
-        truth_file_names_list[i] = train_file_names_list[i].replace(".tif","_mask.png").replace("images", "truth")
+
+        if data_dir == "training/images/":
+            truth_file_names_list[i] = train_file_names_list[i].replace(".tif","_mask.png").replace("images", "truth")
+        elif data_dir == "augmented_images/":
+            truth_file_names_list[i] = train_file_names_list[i].replace(".tif",".png").replace("train", "truth")
+        else:
+            pass
 
     n_truth_images = len(truth_file_names_list)
 
@@ -135,14 +139,14 @@ def augment_data(train_images,
                             "train_image_id_" + \
                             str(i) + "_" + \
                             str(int(rotation_angle)) + "_" + \
-                            str(int(scale)) + ".tif", \
+                            str(scale).replace(".","p") + ".tif", \
                             rotated_train_image)
 
                 cv2.imwrite(augmented_images_dir + \
                             "truth_image_id_" + \
                             str(i) + "_" + \
                             str(int(rotation_angle)) + "_" + \
-                            str(int(scale)) + ".tif", \
+                            str(scale).replace(".","p") + ".png", \
                             rotated_truth_image)
 
 
