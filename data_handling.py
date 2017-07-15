@@ -101,7 +101,10 @@ def plot_two_images(bgr, gs):
 
 def augment_data(train_images, 
                  truth_images,
-                 ap=[[0.0, 1.0], [180.0, 1.0]]):
+                 nw=50,
+                 nh=50,
+                 ap=[[0.0, 1.0], [180.0, 1.0]],
+                 save_images=True):
 
     # ap - augment parameters
     # ap[i][0] - rotation angle
@@ -118,7 +121,7 @@ def augment_data(train_images,
 
     n_images = len(train_images)
     iw, ih, ic = train_images[0].shape
-    mw, mh = truth_images[0].shape
+    mw, mh, _ = truth_images[0].shape
 
 
     if ((iw != mw) or (mh != mh)):
@@ -134,22 +137,37 @@ def augment_data(train_images,
 
                 rotated_train_image = cv2.warpAffine(train_images[i], R, (iw, ih))
                 rotated_truth_image = cv2.warpAffine(truth_images[i], R, (mw, mh))
-        
-                cv2.imwrite(augmented_images_dir + \
-                            "train_image_id_" + \
-                            str(i) + "_" + \
-                            str(int(rotation_angle)) + "_" + \
-                            str(scale).replace(".","p") + ".tif", \
-                            rotated_train_image)
 
-                cv2.imwrite(augmented_images_dir + \
-                            "truth_image_id_" + \
-                            str(i) + "_" + \
-                            str(int(rotation_angle)) + "_" + \
-                            str(scale).replace(".","p") + ".png", \
-                            rotated_truth_image)
+                grayscale_truth_image = cv2.cvtColor(rotated_truth_image, cv2.COLOR_BGR2GRAY)
 
+                resized_truth_image = cv2.resize(grayscale_truth_image, 
+                                                 (nw, nh), 
+                                                 interpolation = cv2.INTER_LINEAR)
 
+                if save_images == True:
+                    cv2.imwrite(augmented_images_dir + \
+                                "train_image_id_" + \
+                                str(i) + "_" + \
+                                str(int(rotation_angle)) + "_" + \
+                                str(scale).replace(".","p") + ".tif", \
+                                rotated_train_image)
+
+                    cv2.imwrite(augmented_images_dir + \
+                                "truth_image_id_" + \
+                                str(i) + "_" + \
+                                str(int(rotation_angle)) + "_" + \
+                                str(scale).replace(".","p") + ".png", \
+                                rotated_truth_image)
+
+                fn = augmented_images_dir + \
+                     "numpy_image_array_id_" + \
+                     str(i) + "_" + \
+                     str(int(rotation_angle)) + "_" + \
+                     str(scale).replace(".","p") + ".npz"
+
+                np.savez_compressed(fn, 
+                                    image=rotated_train_image/255.0, 
+                                    label=resized_truth_image/255.0)
 
 
 

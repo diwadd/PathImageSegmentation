@@ -29,25 +29,24 @@ if __name__ == "__main__":
     print("Truth image size: " + str(truth_images[0].shape))
 
     # ------------------------------------------------------------------------
-    # Convert resized truth images to
-    # gray scale      
-    # ------------------------------------------------------------------------
-
-    grayscale_resized_truth_images = dh.convert_image_list_to_grayscale(truth_images)
-    print("Truth images converted to grayscale.")
-    print("Truth image after conversion to grayscale: " + str(truth_images[0].shape))
-
-
-    # ------------------------------------------------------------------------
     # Augment data        
     # ------------------------------------------------------------------------
 
     ap=[[0.0, 1.0],
-        [90.0, 1.0], 
-        [180.0, 1.0],
-        [270., 1.0]]
+        [90.0, 1.0]] 
+        #[180.0, 1.0],
+        #[270., 1.0],
+        #[0.0, 0.9],
+        #[7.0, 0.9],
+        #[3.5, 0.9],
+        #[83.0, 0.9],
+        #[86.5, 0.9],
+        #[90.0, 0.9], 
+        #[180.0, 0.9],
+        #[270., 0.9]]
 
     dh.augment_data(train_images, 
-                    grayscale_resized_truth_images,
-                    ap=ap)
+                    truth_images,
+                    ap=ap,
+                    save_images=True)
 

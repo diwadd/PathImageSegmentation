@@ -8,11 +8,16 @@ import deep_models as dm
 
 #random.seed(1)
 
+
+
+
+
+
 if __name__ == "__main__":
     print("Starting main.")
 
     # ------------------------------------------------------------------------
-    # Load data        
+    # Load data
     # ------------------------------------------------------------------------
 
     train_images, truth_images = dh.read_data(data_dir="augmented_images/")
@@ -87,7 +92,6 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------
     # List to numpy arrays (~, iw, ih, ic)
     # ------------------------------------------------------------------------
-
 
     train_images_array = np.zeros((n_images, iw, ih, ic))
     resized_truth_images_array = np.zeros((n_images, nw*nh))
