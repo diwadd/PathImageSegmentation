@@ -1,7 +1,9 @@
 import random
 import sys
+import glob
 
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 import data_handling as dh
 import deep_models as dm
@@ -9,8 +11,58 @@ import deep_models as dm
 #random.seed(1)
 
 
+def data_generator(file_name_list, noli=64):
+    
+    """
+    noli - number of loaded images per yield
+    
+    """
+
+    while True:
+        n = len(file_name_list)
+        number_of_image_loads = round(n / noli)
+        ptr = 0
+        # print("n: " + str(n))
+        # print("number_of_image_loads: " + str(number_of_image_loads))
+
+        for i in range(number_of_image_loads):
+            # print("We are a i: " + str(i))
+            # create numpy arrays of input data
+            # and labels, from each line in the file
+            mini_batch_fnl = file_name_list[ptr:(ptr + noli)]
+            ptr = ptr + noli
+
+            x_data, y_data = dh.load_data_from_npz(mini_batch_fnl)
+            yield (x_data, y_data)
 
 
+def evaluate(model, file_name_list, noli=64):
+    
+    """
+    noli - number of loaded images per yield
+    
+    """
+
+    n = len(file_name_list)
+    number_of_image_loads = round(n / noli)
+    ptr = 0
+    # print("n: " + str(n))
+    # print("number_of_image_loads: " + str(number_of_image_loads))
+
+    mean_score = 0.0
+    for i in range(number_of_image_loads):
+        # print("We are a i: " + str(i))
+        # create numpy arrays of input data
+        # and labels, from each line in the file
+        mini_batch_fnl = file_name_list[ptr:(ptr + noli)]
+        ptr = ptr + noli
+
+        x_data, y_data = dh.load_data_from_npz(mini_batch_fnl)
+        score = model.evaluate(x_data, y_data, verbose=0)
+        mean_score += score
+    mean_score /= number_of_image_loads
+    print("Mean score: " + str(mean_score))
+        
 
 
 if __name__ == "__main__":
@@ -20,86 +72,32 @@ if __name__ == "__main__":
     # Load data
     # ------------------------------------------------------------------------
 
-    train_images, truth_images = dh.read_data(data_dir="augmented_images/")
-    iw, ih, ic = train_images[0].shape
+    data_file_names = glob.glob("augmented_images/*npz")
 
-    if len(train_images) != len(truth_images):
-        sys.exit("ERROR: Dimension mismatch.")
-    n_images = len(train_images)
+    n_files = len(data_file_names)
 
-    print("Data loaded.")
-    print("Number of train images:" + str(len(train_images)))
-    print("Number of truth images:" + str(len(truth_images)))
-    print("Train image size: " + str(train_images[0].shape))
-    print("Truth image size: " + str(truth_images[0].shape))
+    loaded_data = np.load(data_file_names[0])
+    image = loaded_data["image"]
+    label = loaded_data["label"]
 
-    # ------------------------------------------------------------------------
-    # Convert resized truth images to
-    # gray scale      
-    # ------------------------------------------------------------------------
+    iw, ih, ic = image.shape
+    m, _ = label.shape
+    nw = int(np.sqrt(m))
+    nh = int(np.sqrt(m))
 
-    grayscale_resized_truth_images = dh.convert_image_list_to_grayscale(truth_images)
-    print("Truth images converted to grayscale.")
-    print("Truth image after conversion to grayscale: " + str(truth_images[0].shape))
+    random.shuffle(data_file_names)
+    train_fraction = 0.5
+    valid_fraction = 1.0 - train_fraction
+    test_fraction = 0.5
 
-    # ------------------------------------------------------------------------
-    # Resize truth images        
-    # ------------------------------------------------------------------------
+    x_train_fnl = data_file_names[0:int(train_fraction*n_files)]
+    temp = data_file_names[int(train_fraction*n_files):]
+    x_valid_fnl = temp[0:int(len(temp)/2)]
+    x_test_fnl = temp[int(len(temp)/2):]
 
-    nw = 50
-    nh = 50
-
-    resized_truth_images = dh.resize_image_list(grayscale_resized_truth_images, nw, nh)
-    print("Resized truth images.")
-    print("Truth image after resize: " + str(truth_images[0].shape))
-
-    # ------------------------------------------------------------------------
-    # Shuffle the data
-    # ------------------------------------------------------------------------
-    # We use zip to maintain the
-    # correspondence image <-> truth.
-    # truth_images is icluded so that we can
-    # later compare back resized truth images
-    # with the original truth images.
-    # ------------------------------------------------------------------------
-
-    train_truth_image_list = list(zip(train_images, resized_truth_images, truth_images))
-    random.shuffle(train_truth_image_list)
-    train_images, resized_truth_images, truth_images = zip(*train_truth_image_list)
-
-    print("Data shuffled.")
-    print("Number of train images:" + str(len(train_images)))
-    print("Number of resized truth images:" + str(len(resized_truth_images)))
-    print("Train image size: " + str(train_images[0].shape))
-    print("Resized truth image size: " + str(resized_truth_images[0].shape))
-
-    dh.plot_two_images(train_images[0], resized_truth_images[0])
-
-    # ------------------------------------------------------------------------
-    # Back resize the truth data.
-    # ------------------------------------------------------------------------
-
-    back_resized_truth_images = dh.resize_image_list(resized_truth_images, iw, ih)
-    dh.plot_two_images(truth_images[0], back_resized_truth_images[0])
-
-    # ------------------------------------------------------------------------
-    # Scale the images to [0, 1]
-    # ------------------------------------------------------------------------
-
-    train_images = [train_images[i]/255.0 for i in range(n_images)]
-    resized_truth_images = [resized_truth_images[i]/255.0 for i in range(n_images)]
-
-    # ------------------------------------------------------------------------
-    # List to numpy arrays (~, iw, ih, ic)
-    # ------------------------------------------------------------------------
-
-    train_images_array = np.zeros((n_images, iw, ih, ic))
-    resized_truth_images_array = np.zeros((n_images, nw*nh))
-
-    for i in range(n_images):
-        train_images_array[i, :, :, :] = train_images[i]
-        resized_truth_images_array[i, :] = np.reshape(resized_truth_images[i], (nw*nh))
-
+    print("Number of train data files: " + str(len(x_train_fnl)))
+    print("Number of valid data files: " + str(len(x_valid_fnl)))
+    print("Number of test data files: " + str(len(x_test_fnl)))
 
     model = dm.basic_model(iw=iw, 
                            ih=ih, 
@@ -109,10 +107,19 @@ if __name__ == "__main__":
                            dropout=0.1,
                            alpha=0.001)
 
-    model.fit(train_images_array,
-              resized_truth_images_array,
-              epochs=100,
-              batch_size=16)
+    noli = 10
+    n = len(x_train_fnl)
+    number_of_image_loads = round(n / noli)
+    print("Number of image loads: " + str(number_of_image_loads))
+    n_epochs = 100    
+    n_sub_epochs = 1
+
+    for i in range(n_epochs):
+        print("Global epoch: " + str(i) + "/" + str(n_epochs))
+        model.fit_generator(data_generator(data_file_names, noli=noli),
+                            steps_per_epoch=number_of_image_loads,
+                            epochs=n_sub_epochs)
+        evaluate(model, x_valid_fnl, noli=64)
 
 
     model.save("model.h5")

@@ -101,8 +101,10 @@ def plot_two_images(bgr, gs):
 
 def augment_data(train_images, 
                  truth_images,
-                 nw=50,
-                 nh=50,
+                 nw_image=250,
+                 nh_image=250,
+                 nw_label=50,
+                 nh_label=50,
                  ap=[[0.0, 1.0], [180.0, 1.0]],
                  save_images=True):
 
@@ -128,48 +130,94 @@ def augment_data(train_images,
         sys.exit("ERROR: Dimension mismatch!")
 
     for i in range(n_images):
-            for j in range(len(ap)):
+        print("Image: " + str(i) + "/" + str(n_images), end="\r")
+        for j in range(len(ap)):
 
-                rotation_angle = ap[j][0]
-                scale = ap[j][1]
+            rotation_angle = ap[j][0]
+            scale = ap[j][1]
 
-                R = cv2.getRotationMatrix2D((iw/2, ih/2), rotation_angle, scale)
+            R = cv2.getRotationMatrix2D((iw/2, ih/2), rotation_angle, scale)
 
-                rotated_train_image = cv2.warpAffine(train_images[i], R, (iw, ih))
-                rotated_truth_image = cv2.warpAffine(truth_images[i], R, (mw, mh))
+            rotated_train_image = cv2.warpAffine(train_images[i], R, (iw, ih))
+            rotated_truth_image = cv2.warpAffine(truth_images[i], R, (mw, mh))
 
-                grayscale_truth_image = cv2.cvtColor(rotated_truth_image, cv2.COLOR_BGR2GRAY)
+            x_shift = ap[j][2]
+            y_shift = ap[j][3]
 
-                resized_truth_image = cv2.resize(grayscale_truth_image, 
-                                                 (nw, nh), 
-                                                 interpolation = cv2.INTER_LINEAR)
+            M = np.float32([[1, 0, x_shift],[0, 1, y_shift]])
 
-                if save_images == True:
-                    cv2.imwrite(augmented_images_dir + \
-                                "train_image_id_" + \
-                                str(i) + "_" + \
-                                str(int(rotation_angle)) + "_" + \
-                                str(scale).replace(".","p") + ".tif", \
-                                rotated_train_image)
+            shifted_train_image = cv2.warpAffine(rotated_train_image, M, (iw, ih))
+            shifted_truth_image = cv2.warpAffine(rotated_truth_image, M, (mw, mh))
 
-                    cv2.imwrite(augmented_images_dir + \
-                                "truth_image_id_" + \
-                                str(i) + "_" + \
-                                str(int(rotation_angle)) + "_" + \
-                                str(scale).replace(".","p") + ".png", \
-                                rotated_truth_image)
+            grayscale_truth_image = cv2.cvtColor(shifted_truth_image, cv2.COLOR_BGR2GRAY)
 
-                fn = augmented_images_dir + \
-                     "numpy_image_array_id_" + \
-                     str(i) + "_" + \
-                     str(int(rotation_angle)) + "_" + \
-                     str(scale).replace(".","p") + ".npz"
+            resized_train_image = cv2.resize(shifted_train_image, 
+                                             (nw_image, nh_image), 
+                                             interpolation = cv2.INTER_LINEAR)
 
-                np.savez_compressed(fn, 
-                                    image=rotated_train_image/255.0, 
-                                    label=resized_truth_image/255.0)
+            resized_truth_image = cv2.resize(grayscale_truth_image, 
+                                             (nw_label, nh_label), 
+                                             interpolation = cv2.INTER_LINEAR)
+
+            if save_images == True:
+                cv2.imwrite(augmented_images_dir + \
+                            "train_image_id_" + \
+                            str(i) + "_" + \
+                            str(rotation_angle).replace(".","p") + "_" + \
+                            str(x_shift) + "_" + \
+                            str(y_shift) + "_" + \
+                            str(scale).replace(".","p") + ".tif", \
+                            shifted_train_image)
+
+                cv2.imwrite(augmented_images_dir + \
+                            "truth_image_id_" + \
+                            str(i) + "_" + \
+                            str(rotation_angle).replace(".","p") + "_" + \
+                            str(x_shift) + "_" + \
+                            str(y_shift) + "_" + \
+                            str(scale).replace(".","p") + ".png", \
+                            shifted_truth_image)
+
+            fn = augmented_images_dir + \
+                 "numpy_image_array_id_" + \
+                 str(i) + "_" + \
+                 str(rotation_angle).replace(".","p") + "_" + \
+                 str(x_shift) + "_" + \
+                 str(y_shift) + "_" + \
+                 str(scale).replace(".","p") + ".npz"
+
+            np.savez_compressed(fn, 
+                                image=resized_train_image/255.0, 
+                                label=np.reshape(resized_truth_image, (nw_label*nh_label, 1))/255.0)
 
 
+def load_data_from_npz(file_name_list):
 
+    n_files = len(file_name_list)
+    if n_files == 0:
+        sys.exit("ERROR: File name list empty.")
+
+    loaded_data = np.load(file_name_list[0])
+    image = loaded_data["image"]
+    label = loaded_data["label"]
+
+    iw, ih, ic = image.shape
+    m, _ = label.shape
+
+    x_data = np.zeros((n_files, ih, iw, ic))
+    y_data = np.zeros((n_files, m))
+
+    x_data[0, :, :, :] = image
+    y_data[0, :] = label[:, 0]
+
+    for i in range(1, n_files):
+        loaded_data = np.load(file_name_list[i])
+        image = loaded_data["image"]
+        label = loaded_data["label"]
+
+        x_data[i, :, :, :] = image
+        y_data[i, :] = label[:, 0]
+
+    return x_data, y_data
 
 
