@@ -8,6 +8,9 @@ import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 
+DEFAULT_WIDTH = 500
+DEFAULT_HEIGHT = 500
+
 def load_images(file_names_list):
 
     n_images = len(file_names_list)
@@ -99,12 +102,44 @@ def plot_two_images(bgr, gs):
     plt.show()
 
 
+def plot_two_images(bgr, gs, img):
+
+    rows = 1
+    cols = 3
+    f, axs = plt.subplots(rows, cols)
+
+    plt.subplot(rows, cols, 1)
+    if len(bgr.shape) == 3:
+        plt.imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+    else:
+        plt.imshow(bgr)
+    plt.colorbar()
+
+
+    plt.subplot(rows, cols, 2)
+    if len(gs.shape) == 3:
+        plt.imshow(cv2.cvtColor(gs, cv2.COLOR_BGR2RGB))
+    else:
+        plt.imshow(gs)
+    plt.colorbar()
+
+    plt.subplot(rows, cols, 3)
+    if len(gs.shape) == 3:
+        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    else:
+        plt.imshow(img)
+    plt.colorbar()
+
+    plt.show()
+
+
 def augment_data(train_images, 
                  truth_images,
                  nw_image=250,
                  nh_image=250,
                  nw_label=50,
                  nh_label=50,
+                 augmented_images_dir="augmented_images/",
                  ap=[[0.0, 1.0], [180.0, 1.0]],
                  save_images=True):
 
@@ -112,7 +147,6 @@ def augment_data(train_images,
     # ap[i][0] - rotation angle
     # ap[i][1] - scale
 
-    augmented_images_dir = "augmented_images/"
     is_dir = os.path.isdir(augmented_images_dir)
     if (is_dir == True):
         shutil.rmtree(augmented_images_dir)

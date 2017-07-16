@@ -3,12 +3,12 @@ import sys
 import glob
 
 import numpy as np
-from sklearn.model_selection import train_test_split
+
+from keras import backend as K
+from keras.models import load_model
 
 import data_handling as dh
 import deep_models as dm
-
-#random.seed(1)
 
 
 def data_generator(file_name_list, noli=64):

@@ -168,20 +168,17 @@ if __name__ == "__main__":
         [276.0, 0.85, 0, 0],
         [279.0, 0.85, 0, 0]]
 
-    """
-    ap = [[0.0, 0.85,-30,-30],
-          [0.0, 0.85,-30, 30],
-          [0.0, 0.85, 30,-30],
-          [0.0, 0.85, 30, 30]]
-    """
+    ap = [[3.0, 1.0, 10, 10]]
+
 
     print("Number of augumentations: " + str(len(ap)))
     dh.augment_data(train_images, 
                     truth_images,
                     nw_image=250,
                     nh_image=250,
-                    nw_label=50,
-                    nh_label=50,
+                    nw_label=100,
+                    nh_label=100,
+                    augmented_images_dir="augmented_images/",
                     ap=ap,
                     save_images=True)
 
