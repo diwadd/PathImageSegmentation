@@ -10,6 +10,7 @@ from keras.models import load_model
 import data_handling as dh
 import deep_models as dm
 
+random.seed(111)
 
 def data_generator(file_name_list, noli=64):
     
@@ -95,19 +96,28 @@ if __name__ == "__main__":
     x_valid_fnl = temp[0:int(len(temp)/2)]
     x_test_fnl = temp[int(len(temp)/2):]
 
+    print("First train file: " + str(x_train_fnl[0]))
+
     print("Number of train data files: " + str(len(x_train_fnl)))
     print("Number of valid data files: " + str(len(x_valid_fnl)))
     print("Number of test data files: " + str(len(x_test_fnl)))
 
     K.get_session()
 
-    model = dm.basic_model(iw=iw, 
-                           ih=ih, 
-                           ic=ic,
-                           ow=nw,
-                           oh=nh,
-                           dropout=0.1,
-                           alpha=0.001)
+
+    new_model = False
+    if (new_model == True):
+        print("Creating a new model!")
+        model = dm.basic_model(iw=iw, 
+                               ih=ih, 
+                               ic=ic,
+                               ow=nw,
+                               oh=nh,
+                               dropout=0.1,
+                               alpha=0.001)
+    else:
+        model = load_model("model.h5")
+        print("Model loaded!")
 
     noli = 10
     n = len(x_train_fnl)
