@@ -43,7 +43,7 @@ def prepare_data_for_dispatch(test_images_list,
         os.makedirs(images_dir)
 
     K.get_session()
-    model = load_model("model_train_0p12_valid_0p10.h5")
+    model = load_model("model.h5")
 
     n_train_images = len(test_images_list)
     for i in range(n_train_images):
@@ -110,6 +110,8 @@ if __name__ == "__main__":
     prepare_data_for_dispatch(image_list,
                               nw_image=250,
                               nh_image=250,
+                              nw_label=100,
+                              nh_label=100,
                               images_dir="images_for_dispatch/")
 
 
