@@ -10,6 +10,12 @@ from keras.models import load_model
 import data_handling as dh
 import deep_models as dm
 
+# When using keras_fcn we test the FCN VGG16 network.
+# In our test we use the keras implementation by JihongJu
+# See: https://github.com/JihongJu/keras-fcn
+# As of July 2017 this implementation is published under the MIT License.
+from keras_fcn import FCN
+
 random.seed(111)
 
 def data_generator(file_name_list, noli=64):
@@ -50,7 +56,8 @@ def evaluate(model, file_name_list, noli=64):
     # print("n: " + str(n))
     # print("number_of_image_loads: " + str(number_of_image_loads))
 
-    mean_score = 0.0
+    mean_loss = 0.0
+    mean_acc = 0.0
     for i in range(number_of_image_loads):
         # print("We are a i: " + str(i))
         # create numpy arrays of input data
@@ -60,9 +67,15 @@ def evaluate(model, file_name_list, noli=64):
 
         x_data, y_data = dh.load_data_from_npz(mini_batch_fnl)
         score = model.evaluate(x_data, y_data, verbose=0)
-        mean_score += score
-    mean_score /= number_of_image_loads
-    print("Mean score: " + str(mean_score))
+
+        local_loss = score[0]
+        local_acc = score[1]
+
+        mean_loss += local_loss
+        mean_acc += local_acc
+    mean_loss /= number_of_image_loads
+    mean_acc /= number_of_image_loads
+    print("Mean loss: " + str(mean_loss) + " - mean acc: " + str(mean_acc))
         
 
 
@@ -82,9 +95,7 @@ if __name__ == "__main__":
     label = loaded_data["label"]
 
     iw, ih, ic = image.shape
-    m, _ = label.shape
-    nw = int(np.sqrt(m))
-    nh = int(np.sqrt(m))
+    nw, nh, nc= label.shape
 
     random.shuffle(data_file_names)
     train_fraction = 0.6
@@ -105,9 +116,10 @@ if __name__ == "__main__":
     K.get_session()
 
 
-    new_model = False
+    new_model = True
     if (new_model == True):
         print("Creating a new model!")
+        """
         model = dm.basic_model(iw=iw, 
                                ih=ih, 
                                ic=ic,
@@ -115,6 +127,18 @@ if __name__ == "__main__":
                                oh=nh,
                                dropout=0.1,
                                alpha=0.001)
+        """
+
+        model = FCN(input_shape=(iw, ih, ic), classes=2,  
+                    weights='imagenet', trainable_encoder=True)
+
+        model.compile(optimizer='rmsprop',
+                          loss='categorical_crossentropy',
+                          metrics=['accuracy'])
+
+        model.summary()
+
+
     else:
         model = load_model("model.h5")
         print("Model loaded!")

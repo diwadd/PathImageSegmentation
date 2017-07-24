@@ -198,10 +198,10 @@ if __name__ == "__main__":
     print("Number of augumentations: " + str(len(ap)))
     dh.augment_data(train_images, 
                     truth_images,
-                    nw_image=250,
-                    nh_image=250,
-                    nw_label=100,
-                    nh_label=100,
+                    nw_image=224,
+                    nh_image=224,
+                    nw_label=224,
+                    nh_label=224,
                     augmented_images_dir="augmented_images/",
                     ap=ap,
                     save_images=False)

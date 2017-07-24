@@ -8,6 +8,8 @@ import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 
+from keras.utils.np_utils import to_categorical
+
 DEFAULT_WIDTH = 500
 DEFAULT_HEIGHT = 500
 
@@ -220,9 +222,19 @@ def augment_data(train_images,
                  str(y_shift) + "_" + \
                  str(scale).replace(".","p") + ".npz"
 
+            resized_truth_image[resized_truth_image > 0] = 1
+
+            # This part is for FCN.
+            # We destinguish between good and bad tissue so
+            # we have just two classes.
+            n_classes = 2
+            resized_truth_image = to_categorical(resized_truth_image, n_classes)
+            resized_truth_image = np.reshape(resized_truth_image, (nw_label, nh_label, n_classes))
+
             np.savez_compressed(fn, 
                                 image=resized_train_image/255.0, 
-                                label=np.reshape(resized_truth_image, (nw_label*nh_label, 1))/255.0)
+                                #label=np.reshape(resized_truth_image, (nw_label*nh_label, 1)))
+                                label=resized_truth_image)
 
 
 def load_data_from_npz(file_name_list):
@@ -236,13 +248,13 @@ def load_data_from_npz(file_name_list):
     label = loaded_data["label"]
 
     iw, ih, ic = image.shape
-    m, _ = label.shape
+    mw, mh, mc = label.shape
 
     x_data = np.zeros((n_files, ih, iw, ic))
-    y_data = np.zeros((n_files, m))
+    y_data = np.zeros((n_files, mw, mh, mc))
 
     x_data[0, :, :, :] = image
-    y_data[0, :] = label[:, 0]
+    y_data[0, :, :, :] = label
 
     for i in range(1, n_files):
         loaded_data = np.load(file_name_list[i])
@@ -250,7 +262,7 @@ def load_data_from_npz(file_name_list):
         label = loaded_data["label"]
 
         x_data[i, :, :, :] = image
-        y_data[i, :] = label[:, 0]
+        y_data[i, :, :, :] = label
 
     return x_data, y_data
 
