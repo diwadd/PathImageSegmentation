@@ -15,6 +15,7 @@ import deep_models as dm
 # See: https://github.com/JihongJu/keras-fcn
 # As of July 2017 this implementation is published under the MIT License.
 from keras_fcn import FCN
+from keras_fcn.layers import BilinearUpSampling2D
 
 random.seed(111)
 
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     K.get_session()
 
 
-    new_model = True
+    new_model = False
     if (new_model == True):
         print("Creating a new model!")
         """
@@ -140,8 +141,9 @@ if __name__ == "__main__":
 
 
     else:
-        model = load_model("model.h5")
+        model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
         print("Model loaded!")
+        model.summary()
 
     noli = 10
     n = len(x_train_fnl)
