@@ -19,7 +19,7 @@ from keras_fcn.layers import BilinearUpSampling2D
 
 random.seed(111)
 
-def data_generator(file_name_list, noli=64):
+def data_generator(file_name_list, noli=20):
     
     """
     noli - number of loaded images per yield
@@ -44,7 +44,7 @@ def data_generator(file_name_list, noli=64):
             yield (x_data, y_data)
 
 
-def evaluate(model, file_name_list, noli=64):
+def evaluate(model, file_name_list, noli=20):
     
     """
     noli - number of loaded images per yield
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     n_sub_epochs = 5
 
     print("Pre training evaluation:")
-    evaluate(model, x_valid_fnl, noli=64)
+    evaluate(model, x_valid_fnl, noli=20)
 
     for i in range(n_epochs):
         print("Global epoch: " + str(i) + "/" + str(n_epochs))

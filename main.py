@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from keras import backend as K
 from keras.models import load_model
+from keras_fcn.layers import BilinearUpSampling2D
 
 import data_handling as dh
 
@@ -66,27 +67,52 @@ def bc(t, o):
     return -np.mean(t*np.log(o) + (1-t)*np.log(1-o))
 
 
+def transform_label(label):
+
+    lw, lh, lc = label.shape
+
+    flat_label = np.zeros((lw,lh))
+
+    for i in range(lw):
+        for j in range(lh):
+            if (label[i, j, 0] >= label[i, j, 1]):
+                flat_label[i, j] = 0
+            else:
+                flat_label[i,j] = 1
+
+    return flat_label
+
+
 if __name__ == "__main__":
 
     K.get_session()
 
-    model = load_model("model_train_0p12_valid_0p10.h5")
+    model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
 
 
-    file_name = "augmented_images/numpy_image_array_id_34_3p0_10_10_1p0.npz"
+    file_name = "augmented_images/numpy_image_array_id_0_0p0_-10_10_0p95.npz"
     loaded_data = np.load(file_name)
 
-    predicted_label = model.predict(np.reshape(loaded_data["image"], (1, 250, 250, 3)))
+    image = loaded_data["image"]
+    label = loaded_data["label"]
+    label = transform_label(label)
 
-    image = (255.0*loaded_data["image"]).astype(np.uint8)
-    label = (255.0*loaded_data["label"]).astype(np.uint8)
+    iw, ih, ic = image.shape
+
+    predicted_label = model.predict(np.reshape(image, (1, iw, ih, ic)))
+    predicted_label = np.reshape(predicted_label, (iw, ih, 2))
+    #predicted_label = transform_label(predicted_label)
+
+    image = image.astype(np.uint8)
+    label =  label.astype(np.uint8)
 
     print("image shape: " + str(image.shape))
     print("label shape: " + str(label.shape))
+    print("predicted_label shape: " + str(predicted_label.shape))
 
-    predicted_label = np.reshape(predicted_label, (50, 50))
-    label = np.reshape(label, (50, 50))
+    dh.plot_two_images(image, predicted_label[:,:,0], predicted_label[:,:,1])
 
+    """
     print("label <-> predicted label bc: " + str(bc(label/255.0, predicted_label)))
 
     predicted_label = cv2.resize(predicted_label,
@@ -97,7 +123,7 @@ if __name__ == "__main__":
                        (500, 500),
                        interpolation = cv2.INTER_LINEAR)
 
-    original_label = cv2.imread("augmented_images/truth_image_id_34_3p0_10_10_1p0.png")
+
     original_label = cv2.cvtColor(original_label, cv2.COLOR_BGR2GRAY)/255.0
 
     #print(predicted_label)
@@ -117,9 +143,10 @@ if __name__ == "__main__":
                                     (500, 500),
                                     interpolation = cv2.INTER_CUBIC)
 
-    dh.plot_two_images(original_label, big_original_label,  original_label - big_original_label)
+
 
     #print("original_label <-> big_original_label bc: " + str(bc(original_label, big_original_label)))
+    """
 
     K.clear_session()
 

@@ -9,6 +9,8 @@ import numpy as np
 from keras import backend as K
 from keras.models import load_model
 
+from keras_fcn.layers import BilinearUpSampling2D
+
 import data_handling as dh
 import deep_models as dm
 
@@ -43,7 +45,7 @@ def prepare_data_for_dispatch(test_images_list,
         os.makedirs(images_dir)
 
     K.get_session()
-    model = load_model("model.h5")
+    model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
 
     n_train_images = len(test_images_list)
     for i in range(n_train_images):
@@ -108,10 +110,10 @@ if __name__ == "__main__":
     image_list = train_images_list + test_images_list
 
     prepare_data_for_dispatch(image_list,
-                              nw_image=250,
-                              nh_image=250,
-                              nw_label=100,
-                              nh_label=100,
+                              nw_image=224,
+                              nh_image=224,
+                              nw_label=224,
+                              nh_label=224,
                               images_dir="images_for_dispatch/")
 
 
