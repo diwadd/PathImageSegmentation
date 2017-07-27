@@ -14,12 +14,12 @@ import deep_models as dm
 # In our test we use the keras implementation by JihongJu
 # See: https://github.com/JihongJu/keras-fcn
 # As of July 2017 this implementation is published under the MIT License.
-from keras_fcn import FCN
-from keras_fcn.layers import BilinearUpSampling2D
+# from keras_fcn import FCN
+# from keras_fcn.layers import BilinearUpSampling2D
 
 random.seed(111)
 
-def data_generator(file_name_list, noli=20):
+def data_generator(file_name_list, noli=128):
     
     """
     noli - number of loaded images per yield
@@ -44,7 +44,7 @@ def data_generator(file_name_list, noli=20):
             yield (x_data, y_data)
 
 
-def evaluate(model, file_name_list, noli=20):
+def evaluate(model, file_name_list, noli=128):
     
     """
     noli - number of loaded images per yield
@@ -67,16 +67,13 @@ def evaluate(model, file_name_list, noli=20):
         ptr = ptr + noli
 
         x_data, y_data = dh.load_data_from_npz(mini_batch_fnl)
-        score = model.evaluate(x_data, y_data, verbose=0)
-
-        local_loss = score[0]
-        local_acc = score[1]
+        local_loss = model.evaluate(x_data, y_data, verbose=0)
 
         mean_loss += local_loss
-        mean_acc += local_acc
+        #mean_acc += local_acc
     mean_loss /= number_of_image_loads
-    mean_acc /= number_of_image_loads
-    print("Mean loss: " + str(mean_loss) + " - mean acc: " + str(mean_acc))
+    #mean_acc /= number_of_image_loads
+    print("Mean loss: " + str(mean_loss)) # + " - mean acc: " + str(mean_acc))
         
 
 
@@ -96,7 +93,7 @@ if __name__ == "__main__":
     label = loaded_data["label"]
 
     iw, ih, ic = image.shape
-    nw, nh, nc= label.shape
+    nw, nh = label.shape
 
     random.shuffle(data_file_names)
     train_fraction = 0.6
@@ -117,7 +114,7 @@ if __name__ == "__main__":
     K.get_session()
 
 
-    new_model = False
+    new_model = True
     if (new_model == True):
         print("Creating a new model!")
         """
@@ -130,6 +127,16 @@ if __name__ == "__main__":
                                alpha=0.001)
         """
 
+        model = dm.basic_model_pooling(iw=iw, 
+                               ih=ih, 
+                               ic=ic,
+                               ow=nw,
+                               oh=nh,
+                               dropout=0.1,
+                               alpha=0.001)
+
+
+        """
         model = FCN(input_shape=(iw, ih, ic), classes=2,  
                     weights='imagenet', trainable_encoder=True)
 
@@ -138,10 +145,10 @@ if __name__ == "__main__":
                           metrics=['accuracy'])
 
         model.summary()
-
+        """
 
     else:
-        model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
+        model = load_model("model.h5")
         print("Model loaded!")
         model.summary()
 
@@ -153,7 +160,7 @@ if __name__ == "__main__":
     n_sub_epochs = 5
 
     print("Pre training evaluation:")
-    evaluate(model, x_valid_fnl, noli=20)
+    evaluate(model, x_valid_fnl, noli=noli)
 
     for i in range(n_epochs):
         print("Global epoch: " + str(i) + "/" + str(n_epochs))

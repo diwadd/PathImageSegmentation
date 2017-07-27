@@ -227,9 +227,9 @@ def augment_data(train_images,
             # This part is for FCN.
             # We destinguish between good and bad tissue so
             # we have just two classes.
-            n_classes = 2
-            resized_truth_image = to_categorical(resized_truth_image, n_classes)
-            resized_truth_image = np.reshape(resized_truth_image, (nw_label, nh_label, n_classes))
+            # n_classes = 2
+            # resized_truth_image = to_categorical(resized_truth_image, n_classes)
+            # resized_truth_image = np.reshape(resized_truth_image, (nw_label, nh_label, n_classes))
 
             np.savez_compressed(fn, 
                                 image=resized_train_image/255.0, 
@@ -248,13 +248,13 @@ def load_data_from_npz(file_name_list):
     label = loaded_data["label"]
 
     iw, ih, ic = image.shape
-    mw, mh, mc = label.shape
+    mw, mh = label.shape
 
     x_data = np.zeros((n_files, ih, iw, ic))
-    y_data = np.zeros((n_files, mw, mh, mc))
+    y_data = np.zeros((n_files, mw, mh, 1))
 
     x_data[0, :, :, :] = image
-    y_data[0, :, :, :] = label
+    y_data[0, :, :, 0] = label
 
     for i in range(1, n_files):
         loaded_data = np.load(file_name_list[i])
@@ -262,7 +262,7 @@ def load_data_from_npz(file_name_list):
         label = loaded_data["label"]
 
         x_data[i, :, :, :] = image
-        y_data[i, :, :, :] = label
+        y_data[i, :, :, 0] = label
 
     return x_data, y_data
 
