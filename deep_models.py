@@ -6,6 +6,8 @@ from keras.layers import Flatten
 from keras.layers import Dense
 from keras.layers import Input
 from keras.layers import Conv2D
+from keras.layers import Conv2DTranspose
+from keras.layers import Cropping2D
 from keras.layers import MaxPooling2D
 from keras.layers import GlobalMaxPooling2D
 from keras.layers import GlobalAveragePooling2D
@@ -206,6 +208,74 @@ def basic_model_pooling(iw=500, # Input width
 
     print("\n ---> Model summary <--- \n")
     model.summary()
+
+    return model
+
+
+def vg16_fcn(iw=500, # Input width
+              ih=500, # Input height 
+              ic=3,
+              weight_decay=0.0,
+              batch_momentum=0.9,
+              dropout=0.5,
+              classes=2):
+    # Based on:
+    # Fully Convolutional Models for Semantic Segmentation
+    # Evan Shelhamer*, Jonathan Long*, Trevor Darrell
+    # PAMI 2016
+    # arXiv:1605.06211
+
+    input_image = Input((iw, ih, ic))
+
+    # Conv 1
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(input_image)
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
+    pool1 = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+
+    # Conv 2
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(pool1)
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
+    pool2 = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+
+    # Conv 3
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(pool2)
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
+    pool3 = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+
+    # Conv 4
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(pool3)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
+    pool4 = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+
+    # Conv 5
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(pool4)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
+    pool5 = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+
+    # Fully Conv fc6
+    fc6 = Conv2D(4096, (7, 7), activation='relu', padding='same', name='fc6')(pool5)
+    drop6 = Dropout(rate=dropout)(fc6)
+    fc7 = Conv2D(4096, (1, 1), activation='relu', padding='same', name='fc7')(drop6)
+    drop7 = Dropout(rate=dropout)(fc7)
+
+    score_fr = Conv2D(classes, (1, 1), activation='relu', padding='same', name='score_fr')(drop7)
+
+    upscore = Conv2DTranspose(classes, kernel_size=(64, 64), strides=(32, 32), )(score_fr)
+
+
+    _, uw, uh, uc = upscore._keras_shape
+    cw = (uw - iw)//2
+    ch = (uh - ih)//2
+    print("cw: " + str(cw))
+    print("ch: " + str(ch))
+
+    score = Cropping2D(cropping=(cw, ch))(upscore)
+
+
+    model = Model(input_image, score, name="vgg16_based")
 
     return model
 
