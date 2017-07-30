@@ -244,8 +244,8 @@ def load_data_from_npz(file_name_list):
         sys.exit("ERROR: File name list empty.")
 
     loaded_data = np.load(file_name_list[0])
-    image = loaded_data["image"]
-    label = loaded_data["label"]
+    image = loaded_data["image"].astype(np.float32)
+    label = loaded_data["label"].astype(np.float32)
 
     iw, ih, ic = image.shape
     mw, mh, mc = label.shape
@@ -258,8 +258,8 @@ def load_data_from_npz(file_name_list):
 
     for i in range(1, n_files):
         loaded_data = np.load(file_name_list[i])
-        image = loaded_data["image"]
-        label = loaded_data["label"]
+        image = loaded_data["image"].astype(np.float32)
+        label = loaded_data["label"].astype(np.float32)
 
         x_data[i, :, :, :] = image
         y_data[i, :, :, :] = label

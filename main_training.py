@@ -6,6 +6,10 @@ import numpy as np
 
 from keras import backend as K
 from keras.models import load_model
+from keras.applications.vgg16 import VGG16
+from keras import optimizers
+
+import tensorflow as tf
 
 import data_handling as dh
 import deep_models as dm
@@ -18,6 +22,8 @@ from keras_fcn import FCN
 from keras_fcn.layers import BilinearUpSampling2D
 
 random.seed(111)
+
+
 
 def data_generator(file_name_list, noli=20):
     
@@ -69,6 +75,8 @@ def evaluate(model, file_name_list, noli=20):
         x_data, y_data = dh.load_data_from_npz(mini_batch_fnl)
         score = model.evaluate(x_data, y_data, verbose=0)
 
+        #print("score: " + str(score))
+
         local_loss = score[0]
         local_acc = score[1]
 
@@ -117,25 +125,84 @@ if __name__ == "__main__":
     K.get_session()
 
 
-    new_model = False
+    new_model = True
     if (new_model == True):
         print("Creating a new model!")
-        """
-        model = dm.basic_model(iw=iw, 
-                               ih=ih, 
-                               ic=ic,
-                               ow=nw,
-                               oh=nh,
-                               dropout=0.1,
-                               alpha=0.001)
-        """
 
-        model = FCN(input_shape=(iw, ih, ic), classes=2,  
-                    weights='imagenet', trainable_encoder=True)
 
-        model.compile(optimizer='rmsprop',
-                          loss='categorical_crossentropy',
-                          metrics=['accuracy'])
+        #model = FCN(input_shape=(iw, ih, ic), classes=2,  
+        #            weights='imagenet', trainable_encoder=True)
+
+        model = dm.vg16_fcn(iw, 
+                            ih, 
+                            ic,
+                            dropout=0.5,
+                            alpha=0.0001,
+                            classes=2)
+
+        opt = optimizers.SGD(lr=0.0001, momentum=0.9, clipvalue=0.5)
+        opt = optimizers.Adam(1e-4, clipvalue=0.5)
+        model.compile(loss="categorical_crossentropy",
+                      optimizer=opt,
+                      metrics=["accuracy"])
+
+
+        vgg16_model = VGG16(weights='imagenet', include_top=False)
+        vgg16_model.compile(loss="categorical_crossentropy",
+                      optimizer="adadelta")
+
+        index = 12
+        print("Our model config: ")
+        print(model.layers[index].get_config())
+
+        print("VGG16 model config: ")
+        print(vgg16_model.layers[index].get_config())
+
+        print("Our model:")
+        layer1 = model.layers[index].get_weights()
+        print(layer1[0].shape)
+        print(layer1[0][0,0,0,1:5])
+
+        print("VGG16 model:")
+        layer1 = vgg16_model.layers[index].get_weights()
+        print(layer1[0].shape)
+        print(layer1[0][0,0,0,1:5])
+
+
+        for i in range(len(vgg16_model.layers)):
+
+            print("\n\n\n Layer number: " + str(i))
+
+            layer_config = vgg16_model.layers[i].get_config()
+            print("Setting name: " + str(layer_config['name']))
+            if layer_config['name'] == 'block5_pool':
+                break
+
+            layer_weights = vgg16_model.layers[i].get_weights()
+
+            if len(layer_weights) != 0:
+                print(layer1[0].shape)
+                model.layers[i].set_weights(vgg16_model.layers[i].get_weights())
+            else:
+                print("No wieghts to set!")
+
+        print("After setting the weights...")
+
+        print("Our model:")
+        layer1 = model.layers[index].get_weights()
+        print(layer1[0].shape)
+        print(layer1[0][0,0,0,1:5])
+
+        print("VGG16 model:")
+        layer1 = vgg16_model.layers[index].get_weights()
+        print(layer1[0].shape)
+        print(layer1[0][0,0,0,1:5])
+
+
+
+        #model.compile(optimizer='adadelta',
+        #                  loss='categorical_crossentropy',
+        #                  metrics=['accuracy'])
 
         model.summary()
 
@@ -149,7 +216,7 @@ if __name__ == "__main__":
     n = len(x_train_fnl)
     number_of_image_loads = round(n / noli)
     print("Number of image loads: " + str(number_of_image_loads))
-    n_epochs = 20    
+    n_epochs = 100    
     n_sub_epochs = 5
 
     print("Pre training evaluation:")

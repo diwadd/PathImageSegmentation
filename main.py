@@ -87,10 +87,10 @@ if __name__ == "__main__":
 
     K.get_session()
 
-    model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
+    model = load_model("fcn_model.h5")
 
 
-    file_name = "augmented_images/numpy_image_array_id_0_0p0_-10_10_0p95.npz"
+    file_name = "augmented_images/numpy_image_array_id_0_270p0_0_0_1p0.npz"
     loaded_data = np.load(file_name)
 
     image = loaded_data["image"]
@@ -101,16 +101,17 @@ if __name__ == "__main__":
 
     predicted_label = model.predict(np.reshape(image, (1, iw, ih, ic)))
     predicted_label = np.reshape(predicted_label, (iw, ih, 2))
-    #predicted_label = transform_label(predicted_label)
+    predicted_label = transform_label(predicted_label)
 
-    image = image.astype(np.uint8)
+    image = (255.0*image).astype(np.uint8)
     label =  label.astype(np.uint8)
 
     print("image shape: " + str(image.shape))
     print("label shape: " + str(label.shape))
     print("predicted_label shape: " + str(predicted_label.shape))
 
-    dh.plot_two_images(image, predicted_label[:,:,0], predicted_label[:,:,1])
+    #dh.plot_two_images(label, predicted_label[:,:,0], predicted_label[:,:,1])
+    dh.plot_two_images(image, label, predicted_label)
 
     """
     print("label <-> predicted label bc: " + str(bc(label/255.0, predicted_label)))
