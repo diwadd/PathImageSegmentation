@@ -213,12 +213,12 @@ def basic_model_pooling(iw=500, # Input width
     return model
 
 
-def vg16_fcn(iw=500, # Input width
-              ih=500, # Input height 
-              ic=3,
-              dropout=0.5,
-              alpha=0.001,
-              classes=2):
+def vgg16_32s_fcn(iw=500, # Input width
+                  ih=500, # Input height 
+                  ic=3,
+                  dropout=0.5,
+                  alpha=0.001,
+                  classes=2):
     # Based on:
     # Fully Convolutional Models for Semantic Segmentation
     # Evan Shelhamer*, Jonathan Long*, Trevor Darrell
@@ -282,6 +282,95 @@ def vg16_fcn(iw=500, # Input width
     model = Model(input_image, output, name="vgg16_based")
 
     return model
+
+
+def vgg16_16s_fcn(iw=500, # Input width
+                  ih=500, # Input height 
+                  ic=3,
+                  dropout=0.5,
+                  alpha=0.001,
+                  classes=2):
+    # Based on:
+    # Fully Convolutional Models for Semantic Segmentation
+    # Evan Shelhamer*, Jonathan Long*, Trevor Darrell
+    # PAMI 2016
+    # arXiv:1605.06211
+
+    reg_fun = regularizers.l2(alpha)
+
+    input_image = Input((iw, ih, ic))
+
+    # Conv 1
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block1_conv1')(input_image)
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block1_conv2')(x)
+    pool1 = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+
+    # Conv 2
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block2_conv1')(pool1)
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block2_conv2')(x)
+    pool2 = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+
+    # Conv 3
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block3_conv1')(pool2)
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block3_conv2')(x)
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block3_conv3')(x)
+    pool3 = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+
+    # Conv 4
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block4_conv1')(pool3)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block4_conv2')(x)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block4_conv3')(x)
+    pool4 = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+
+    # Conv 5
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block5_conv1')(pool4)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block5_conv2')(x)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='block5_conv3')(x)
+    pool5 = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+
+    # Fully Conv fc6
+    fc6 = Conv2D(4096, (7, 7), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='fc6')(pool5)
+    drop6 = Dropout(rate=dropout)(fc6)
+
+    # Fully Conv fc7
+    fc7 = Conv2D(4096, (1, 1), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='fc7')(drop6)
+    drop7 = Dropout(rate=dropout)(fc7)
+
+    score_fr = Conv2D(classes, (1, 1), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='score_fr')(drop7)
+    upscore2 = Conv2DTranspose(classes, kernel_size=(4, 4), strides=(2, 2), kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='upscore2')(score_fr)
+
+
+    score_pool4 = Conv2D(classes, (1, 1), activation='relu', padding='same', kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='score_pool4')(pool4)
+
+    _, uw, uh, uc = upscore2._keras_shape
+    _, sw, sh, sc = score_pool4._keras_shape
+    cw1 = (uw - sw)//2
+    ch1 = (uh - sh)//2
+    #print("cw1: " + str(cw1))
+    #print("ch1: " + str(ch1))
+
+    # Technically score_pool4 should have a larger size then upscore2.
+    # At least that is what follows from crop(n.score_pool4, n.upscore2).
+    # This is, however, not the case and we nned to crop upscore2.
+
+    score_pool4c = Cropping2D(cropping=(cw1, ch1))(upscore2) 
+    fuse_pool4 = keras.layers.Add()([score_pool4c, score_pool4])
+
+    upscore16 = Conv2DTranspose(classes, kernel_size=(32, 32), strides=(16, 16), kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='upscore16')(fuse_pool4)
+
+    _, uw, uh, uc = upscore16._keras_shape
+    cw2 = (uw - iw)//2
+    ch2 = (uh - ih)//2
+    #print("cw2: " + str(cw2))
+    #print("ch2: " + str(ch2))
+
+    score = Cropping2D(cropping=(cw2, ch2))(upscore16)
+    output = Activation('softmax')(score)
+
+    model = Model(input_image, output, name="vgg16_based")
+
+    return model
+
 
 
 

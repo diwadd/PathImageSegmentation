@@ -133,12 +133,12 @@ if __name__ == "__main__":
         #model = FCN(input_shape=(iw, ih, ic), classes=2,  
         #            weights='imagenet', trainable_encoder=True)
 
-        model = dm.vg16_fcn(iw, 
-                            ih, 
-                            ic,
-                            dropout=0.5,
-                            alpha=0.0001,
-                            classes=2)
+        model = dm.vgg16_16s_fcn(iw, 
+                                 ih, 
+                                 ic,
+                                 dropout=0.5,
+                                 alpha=0.0001,
+                                 classes=2)
 
         opt = optimizers.SGD(lr=0.0001, momentum=0.9, clipvalue=0.5)
         opt = optimizers.Adam(1e-4, clipvalue=0.5)
