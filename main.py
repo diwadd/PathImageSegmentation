@@ -67,41 +67,26 @@ def bc(t, o):
     return -np.mean(t*np.log(o) + (1-t)*np.log(1-o))
 
 
-def transform_label(label):
-
-    lw, lh, lc = label.shape
-
-    flat_label = np.zeros((lw,lh))
-
-    for i in range(lw):
-        for j in range(lh):
-            if (label[i, j, 0] >= label[i, j, 1]):
-                flat_label[i, j] = 0
-            else:
-                flat_label[i,j] = 1
-
-    return flat_label
-
 
 if __name__ == "__main__":
 
     K.get_session()
 
-    model = load_model("fcn_model.h5")
-
+    # model = load_model("vgg16_32s_fcn_model.h5")
+    model = load_model("vgg16_16s_fcn_model_after_global_epoch_22.h5")
 
     file_name = "augmented_images/numpy_image_array_id_0_270p0_0_0_1p0.npz"
     loaded_data = np.load(file_name)
 
     image = loaded_data["image"]
     label = loaded_data["label"]
-    label = transform_label(label)
+    label = dh.transform_label(label)
 
     iw, ih, ic = image.shape
 
     predicted_label = model.predict(np.reshape(image, (1, iw, ih, ic)))
     predicted_label = np.reshape(predicted_label, (iw, ih, 2))
-    predicted_label = transform_label(predicted_label)
+    predicted_label = dh.transform_label(predicted_label)
 
     image = (255.0*image).astype(np.uint8)
     label =  label.astype(np.uint8)

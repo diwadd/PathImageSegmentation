@@ -26,7 +26,8 @@ def load_and_resize_image(image_file_name,
     return resized_image
 
 
-def prepare_data_for_dispatch(test_images_list,
+def prepare_data_for_dispatch(model_file_name,
+                              test_images_list,
                               nw_image=250,
                               nh_image=250,
                               nw_label=50,
@@ -45,7 +46,7 @@ def prepare_data_for_dispatch(test_images_list,
         os.makedirs(images_dir)
 
     K.get_session()
-    model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
+    model = load_model(model_file_name, custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
 
     n_train_images = len(test_images_list)
     for i in range(n_train_images):
@@ -70,7 +71,9 @@ def prepare_data_for_dispatch(test_images_list,
 
         resized_image = np.reshape(resized_image, (1, nw_image, nh_image, ic))/255.0
         label = model.predict(resized_image)
-        label = np.reshape(label, (nw_label, nh_label))
+        label = np.reshape(label, (nw_label, nh_label, 2))
+
+        label = dh.transform_label(label)
 
         label = cv2.resize(label,
                            (dh.DEFAULT_WIDTH, dh.DEFAULT_HEIGHT),
@@ -109,7 +112,10 @@ if __name__ == "__main__":
 
     image_list = train_images_list + test_images_list
 
-    prepare_data_for_dispatch(image_list,
+    # model_file_name = "vgg16_16s_fcn_model_after_global_epoch_62.h5"
+    model_file_name = "vgg16_32s_fcn_model.h5"    
+    prepare_data_for_dispatch(model_file_name,
+                              image_list,
                               nw_image=224,
                               nh_image=224,
                               nw_label=224,

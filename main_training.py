@@ -137,7 +137,7 @@ if __name__ == "__main__":
                                  ih, 
                                  ic,
                                  dropout=0.5,
-                                 alpha=0.0001,
+                                 alpha=0.0003,
                                  classes=2)
 
         opt = optimizers.SGD(lr=0.0001, momentum=0.9, clipvalue=0.5)

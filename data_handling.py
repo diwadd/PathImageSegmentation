@@ -56,6 +56,22 @@ def read_data(data_dir="training/images/"):
     return train_images, truth_images
 
 
+def transform_label(label):
+
+    lw, lh, lc = label.shape
+
+    flat_label = np.zeros((lw,lh))
+
+    for i in range(lw):
+        for j in range(lh):
+            if (label[i, j, 0] >= label[i, j, 1]):
+                flat_label[i, j] = 0
+            else:
+                flat_label[i,j] = 1
+
+    return flat_label
+
+
 def resize_image_list(image_list, n_width, n_height):
 
     n_images = len(image_list)
