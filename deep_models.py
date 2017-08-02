@@ -344,16 +344,27 @@ def vgg16_16s_fcn(iw=500, # Input width
 
     _, uw, uh, uc = upscore2._keras_shape
     _, sw, sh, sc = score_pool4._keras_shape
-    cw1 = (uw - sw)//2
-    ch1 = (uh - sh)//2
-    #print("cw1: " + str(cw1))
-    #print("ch1: " + str(ch1))
+
+    if ((uw - sw) == 1) or ((uh - sh) == 1):
+        cw1 = 1
+        ch1 = 1
+        cropping = ((cw1, 0),(ch1, 0))
+    else:
+        cw1 = (uw - sw)//2
+        ch1 = (uh - sh)//2
+        cropping = (cw1, ch1)
+
+    print("cw1: " + str(cw1))
+    print("ch1: " + str(ch1))
+
+    print("upscore2._keras_shape " + str(upscore2._keras_shape))
+    print("score_pool4._keras_shape " + str(score_pool4._keras_shape))
 
     # Technically score_pool4 should have a larger size then upscore2.
     # At least that is what follows from crop(n.score_pool4, n.upscore2).
     # This is, however, not the case and we nned to crop upscore2.
 
-    score_pool4c = Cropping2D(cropping=(cw1, ch1))(upscore2) 
+    score_pool4c = Cropping2D(cropping=cropping)(upscore2) 
     fuse_pool4 = keras.layers.Add()([score_pool4c, score_pool4])
 
     upscore16 = Conv2DTranspose(classes, kernel_size=(32, 32), strides=(16, 16), kernel_regularizer=regularizers.l2(alpha), bias_regularizer=regularizers.l2(alpha), name='upscore16')(fuse_pool4)

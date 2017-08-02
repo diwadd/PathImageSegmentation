@@ -14,13 +14,6 @@ import tensorflow as tf
 import data_handling as dh
 import deep_models as dm
 
-# When using keras_fcn we test the FCN VGG16 network.
-# In our test we use the keras implementation by JihongJu
-# See: https://github.com/JihongJu/keras-fcn
-# As of July 2017 this implementation is published under the MIT License.
-from keras_fcn import FCN
-from keras_fcn.layers import BilinearUpSampling2D
-
 random.seed(111)
 
 
@@ -125,7 +118,7 @@ if __name__ == "__main__":
     K.get_session()
 
 
-    new_model = True
+    new_model = False
     if (new_model == True):
         print("Creating a new model!")
 
@@ -137,7 +130,7 @@ if __name__ == "__main__":
                                  ih, 
                                  ic,
                                  dropout=0.5,
-                                 alpha=0.0003,
+                                 alpha=0.0001,
                                  classes=2)
 
         opt = optimizers.SGD(lr=0.0001, momentum=0.9, clipvalue=0.5)
@@ -208,11 +201,11 @@ if __name__ == "__main__":
 
 
     else:
-        model = load_model("model.h5", custom_objects={"BilinearUpSampling2D": BilinearUpSampling2D})
+        model = load_model("model.h5")
         print("Model loaded!")
         model.summary()
 
-    noli = 10
+    noli = 4
     n = len(x_train_fnl)
     number_of_image_loads = round(n / noli)
     print("Number of image loads: " + str(number_of_image_loads))
@@ -220,7 +213,7 @@ if __name__ == "__main__":
     n_sub_epochs = 5
 
     print("Pre training evaluation:")
-    evaluate(model, x_valid_fnl, noli=20)
+    evaluate(model, x_valid_fnl, noli=4)
 
     for i in range(n_epochs):
         print("Global epoch: " + str(i) + "/" + str(n_epochs))
@@ -228,7 +221,7 @@ if __name__ == "__main__":
                             steps_per_epoch=number_of_image_loads,
                             epochs=n_sub_epochs)
         print("Validation data mean loss: ")
-        evaluate(model, x_valid_fnl, noli=64)
+        evaluate(model, x_valid_fnl, noli=4)
 
 
         model.save("model.h5")

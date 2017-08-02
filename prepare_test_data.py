@@ -113,13 +113,14 @@ if __name__ == "__main__":
     image_list = train_images_list + test_images_list
 
     # model_file_name = "vgg16_16s_fcn_model_after_global_epoch_62.h5"
-    model_file_name = "vgg16_32s_fcn_model.h5"    
+    # model_file_name = "vgg16_32s_fcn_model.h5"  
+    model_file_name = "model_fcn_16s_500x500_morning.h5"  
     prepare_data_for_dispatch(model_file_name,
                               image_list,
-                              nw_image=224,
-                              nh_image=224,
-                              nw_label=224,
-                              nh_label=224,
+                              nw_image=500,
+                              nh_image=500,
+                              nw_label=500,
+                              nh_label=500,
                               images_dir="images_for_dispatch/")
 
 
