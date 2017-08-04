@@ -77,17 +77,6 @@ def basic_model(iw=500, # Input width
     x = LeakyReLU(alpha)(x)
     x = MaxPooling2D((2, 2), strides=(2, 2), name="block_5_pooling")(x)
 
-    #x = Conv2D(128, (3, 3), activation="linear", padding="same", name="block_6_layer_1")(x)
-    #x = BatchNormalization()(x)
-    #x = LeakyReLU(alpha)(x)
-    #x = Conv2D(128, (3, 3), activation="linear", padding="same", name="block_6_layer_2")(x)
-    #x = BatchNormalization()(x)
-    #x = LeakyReLU(alpha)(x)
-    #x = Conv2D(128, (3, 3), activation="linear", padding="same", name="block_6_layer_3")(x)
-    #x = BatchNormalization()(x)
-    #x = LeakyReLU(alpha)(x)
-    #x = MaxPooling2D((2, 2), strides=(2, 2), name="block_6_pooling")(x)
-
     x = Conv2D(256, (3, 3), activation="linear", padding="same", name="block_7_layer_1")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha)(x)
@@ -187,18 +176,6 @@ def basic_model_pooling(iw=500, # Input width
     x = Conv2D(ow*oh, (3, 3), activation="linear", padding="same", name="block_6_layer_3")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha)(x)
-    #x = MaxPooling2D((2, 2), strides=(2, 2), name="block_6_pooling")(x)
-
-    #x = Conv2D(256, (3, 3), activation="linear", padding="same", name="block_7_layer_1")(x)
-    #x = BatchNormalization()(x)
-    #x = LeakyReLU(alpha)(x)
-    #x = Conv2D(256, (3, 3), activation="linear", padding="same", name="block_7_layer_2")(x)
-    #x = BatchNormalization()(x)
-    #x = LeakyReLU(alpha)(x)
-    #x = Conv2D(256, (3, 3), activation="linear", padding="same", name="block_7_layer_3")(x)
-    #x = BatchNormalization()(x)
-    #x = LeakyReLU(alpha)(x)
-    #x = MaxPooling2D((2, 2), strides=(2, 2), name="block_7_pooling")(x)
 
     x = GlobalAveragePooling2D()(x)
 

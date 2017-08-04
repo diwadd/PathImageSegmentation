@@ -34,10 +34,6 @@ def prepare_data_for_dispatch(model_file_name,
                               nh_label=50,
                               images_dir="images_for_dispatch/"):
 
-    # ap - augment parameters
-    # ap[i][0] - rotation angle
-    # ap[i][1] - scale
-
     is_dir = os.path.isdir(images_dir)
     if (is_dir == True):
         shutil.rmtree(images_dir)
@@ -91,12 +87,6 @@ def prepare_data_for_dispatch(model_file_name,
 
         f.close()
 
-        #np.savez_compressed(fn, 
-        #                    image=resized_image/255.0, 
-        #                    trunk=trunk)
-
-
-
     K.clear_session()
 
 
@@ -114,7 +104,7 @@ if __name__ == "__main__":
 
     # model_file_name = "vgg16_16s_fcn_model_after_global_epoch_62.h5"
     # model_file_name = "vgg16_32s_fcn_model.h5"  
-    model_file_name = "model_fcn_16s_500x500_morning.h5"  
+    model_file_name = "model.h5"  
     prepare_data_for_dispatch(model_file_name,
                               image_list,
                               nw_image=500,

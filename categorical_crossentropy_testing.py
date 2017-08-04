@@ -6,16 +6,9 @@ import cv2
 import numpy as np
 
 from keras import backend as K
-from keras.models import load_model
 from tensorflow.python.ops import math_ops
 
 import deep_models as dm
-
-
-# model = dm.vg16_fcn()
-# model.summary()
-# model.compile(loss="categorical_crossentropy",
-#                  optimizer="adadelta")
 
 
 def cross_entropy(t, p):
