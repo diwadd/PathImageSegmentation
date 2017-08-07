@@ -22,7 +22,7 @@ if __name__ == "__main__":
     #                   interpolation = cv2.INTER_LINEAR)
     #mask = cv2.imread("augmented_images/truth_image_id_0_0p0_30_30_0p85.png")
 
-    dh.plot_two_images(image, label[:, :, 0], label[:, :, 1])
+    dh.plot_three_images(image, label[:, :, 0], label[:, :, 1])
 
     print(label[100:120, 100:120])
 

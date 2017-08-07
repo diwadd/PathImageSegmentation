@@ -120,7 +120,7 @@ def plot_two_images(bgr, gs):
     plt.show()
 
 
-def plot_two_images(bgr, gs, img):
+def plot_three_images(bgr, gs, img):
 
     rows = 1
     cols = 3
